@@ -1,8 +1,15 @@
 package com.example.findapairgamemvvm
 
+import androidx.lifecycle.MutableLiveData
+
 class MainViewModel {
 
-    private val phrasesList = MatchList().apply {
+    val finished = MutableLiveData<Boolean>()
+    private val phrasesList = MatchList(object : FinishCallback {
+        override fun allPairsFound() {
+            finished.value = true
+        }
+    }).apply {
         add(Match("1", "dog"))
         add(Match("2", "cat"))
         add(Match("3", "rat"))
@@ -14,19 +21,14 @@ class MainViewModel {
         shuffle()
     }
 
+    val liveData = MutableLiveData<List<Match>>()
+
+    init {
+        liveData.value = phrasesList
+    }
+
     fun click(match: Match) {
-        val alreadyClicked = phrasesList.find { it.compareType(Type.CHECK) }
-        if (alreadyClicked == null) {
-            val item = phrasesList.find { it.compareContent(match) }!!
-            phrasesList.replace(item, Type.CHECK)
-        } else {
-            if (alreadyClicked.compareId(match)) {
-                phrasesList.replace(alreadyClicked, Type.CORRECT)
-                val item = phrasesList.find { it.compareContent(match) }!!
-                phrasesList.replace(item, Type.CORRECT)
-            } else {
-                phrasesList.replace(alreadyClicked, Type.INITIAL)
-            }
-        }
+        phrasesList.handle(match)
+        liveData.value = phrasesList
     }
 }
